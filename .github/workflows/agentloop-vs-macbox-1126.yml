@@ -30,6 +30,7 @@ jobs:
     timeout-minutes: 60
     steps:
       - name: host and xcode
+        timeout-minutes: 12
         shell: bash
         run: |
           sysctl -n hw.model hw.ncpu hw.memsize machdep.cpu.brand_string || true
@@ -58,6 +59,7 @@ jobs:
           key: agentloop-1126
           path: ${{ env.W }}
       - name: xcodegen (tool, not timed against macbox)
+        timeout-minutes: 12
         shell: bash
         run: |
           set -euo pipefail
@@ -68,6 +70,7 @@ jobs:
             mkdir -p "$HOME/bin"; cp "$XG" "$HOME/bin/xcodegen"; echo "$HOME/bin" >> "$GITHUB_PATH"
           fi
       - name: simulator pick
+        timeout-minutes: 12
         shell: bash
         run: |
           set -euo pipefail
@@ -79,6 +82,7 @@ jobs:
           xcrun simctl list devices | grep "$UDID"
           echo "SIM=$UDID" >> "$GITHUB_ENV"
       - name: counter build
+        timeout-minutes: 12
         shell: bash
         working-directory: bench/agentloop/Counter
         run: |
@@ -86,19 +90,21 @@ jobs:
           export PATH="$HOME/bin:$PATH"; s=$(date +%s)
           xcodegen generate --quiet
           xcodebuild build -scheme Counter -destination "id=$SIM" -derivedDataPath "$W/dd-counter" \
-            CODE_SIGNING_ALLOWED=NO COMPILER_INDEX_STORE_ENABLE=NO > "$RUNNER_TEMP/c-build.log" 2>&1 || { tail -30 "$RUNNER_TEMP/c-build.log"; exit 1; }
+            CODE_SIGN_IDENTITY=- COMPILER_INDEX_STORE_ENABLE=NO > "$RUNNER_TEMP/c-build.log" 2>&1 || { tail -30 "$RUNNER_TEMP/c-build.log"; exit 1; }
           echo "T counter_build $(( $(date +%s) - s ))"
       - name: counter test (unit + UI)
+        timeout-minutes: 12
         shell: bash
         working-directory: bench/agentloop/Counter
         run: |
           set -euo pipefail
           s=$(date +%s)
           xcodebuild test -scheme Counter -destination "id=$SIM" -derivedDataPath "$W/dd-counter" \
-            CODE_SIGNING_ALLOWED=NO COMPILER_INDEX_STORE_ENABLE=NO > "$RUNNER_TEMP/c-test.log" 2>&1 || { grep -E "error:|failed" "$RUNNER_TEMP/c-test.log" | head -20; tail -20 "$RUNNER_TEMP/c-test.log"; exit 1; }
+            CODE_SIGN_IDENTITY=- COMPILER_INDEX_STORE_ENABLE=NO > "$RUNNER_TEMP/c-test.log" 2>&1 || { grep -E "error:|failed" "$RUNNER_TEMP/c-test.log" | head -20; tail -20 "$RUNNER_TEMP/c-test.log"; exit 1; }
           grep -E "Test Suite 'All tests'|Executed" "$RUNNER_TEMP/c-test.log" | tail -2 || true
           echo "T counter_test $(( $(date +%s) - s ))"
       - name: counter change one line and test
+        timeout-minutes: 12
         shell: bash
         working-directory: bench/agentloop/Counter
         run: |
@@ -106,9 +112,10 @@ jobs:
           sed -i '' 's/Text("행 \\(i)")/Text("행 \\(i) ")/' Counter/ContentView.swift
           s=$(date +%s)
           xcodebuild test -scheme Counter -destination "id=$SIM" -derivedDataPath "$W/dd-counter" \
-            CODE_SIGNING_ALLOWED=NO COMPILER_INDEX_STORE_ENABLE=NO > "$RUNNER_TEMP/c-test2.log" 2>&1 || { tail -20 "$RUNNER_TEMP/c-test2.log"; exit 1; }
+            CODE_SIGN_IDENTITY=- COMPILER_INDEX_STORE_ENABLE=NO > "$RUNNER_TEMP/c-test2.log" 2>&1 || { tail -20 "$RUNNER_TEMP/c-test2.log"; exit 1; }
           echo "T counter_edit_test $(( $(date +%s) - s ))"
       - name: counter launch and screenshot
+        timeout-minutes: 12
         shell: bash
         run: |
           set -euo pipefail
@@ -122,19 +129,22 @@ jobs:
           ls -la "$RUNNER_TEMP/shot.png"
           echo "T counter_screenshot $(( $(date +%s) - s ))"
       - name: counter screenshot again
+        timeout-minutes: 12
         shell: bash
         run: |
           s=$(date +%s); xcrun simctl io "$SIM" screenshot "$RUNNER_TEMP/shot2.png" >/dev/null 2>&1; echo "T counter_screenshot_again $(( $(date +%s) - s ))"
       - name: counter test again (no change, simulator already up)
+        timeout-minutes: 12
         shell: bash
         working-directory: bench/agentloop/Counter
         run: |
           set -euo pipefail
           s=$(date +%s)
           xcodebuild test -scheme Counter -destination "id=$SIM" -derivedDataPath "$W/dd-counter" \
-            CODE_SIGNING_ALLOWED=NO COMPILER_INDEX_STORE_ENABLE=NO > "$RUNNER_TEMP/c-test3.log" 2>&1 || { tail -20 "$RUNNER_TEMP/c-test3.log"; exit 1; }
+            CODE_SIGN_IDENTITY=- COMPILER_INDEX_STORE_ENABLE=NO > "$RUNNER_TEMP/c-test3.log" 2>&1 || { tail -20 "$RUNNER_TEMP/c-test3.log"; exit 1; }
           echo "T counter_test_again $(( $(date +%s) - s ))"
       - name: icecubes build
+        timeout-minutes: 12
         shell: bash
         working-directory: ice
         run: |
@@ -146,6 +156,7 @@ jobs:
             CODE_SIGNING_ALLOWED=NO COMPILER_INDEX_STORE_ENABLE=NO > "$RUNNER_TEMP/i-build.log" 2>&1 || { grep -E "error:|BUILD FAILED" "$RUNNER_TEMP/i-build.log" | head -30; tail -20 "$RUNNER_TEMP/i-build.log"; exit 1; }
           echo "T icecubes_build $(( $(date +%s) - s ))"
       - name: icecubes change one line and build
+        timeout-minutes: 12
         shell: bash
         working-directory: ice
         run: |
