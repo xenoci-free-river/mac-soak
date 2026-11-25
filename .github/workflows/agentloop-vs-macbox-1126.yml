@@ -35,7 +35,8 @@ jobs:
           sysctl -n hw.model hw.ncpu hw.memsize machdep.cpu.brand_string || true
           sw_vers -productVersion; df -h / | tail -1
           ls -d /Applications/Xcode*.app
-          XC=$(ls -d /Applications/Xcode_27*.app /Applications/Xcode-27*.app 2>/dev/null | sort -V | tail -1)
+          # Xcode 27.0 with the iOS 27.0 simulator, the same pair macbox ran
+          XC=/Applications/Xcode_27.0.app
           echo "DEVELOPER_DIR=$XC/Contents/Developer" >> "$GITHUB_ENV"
           DEVELOPER_DIR="$XC/Contents/Developer" xcodebuild -version
           mkdir -p "$W"
