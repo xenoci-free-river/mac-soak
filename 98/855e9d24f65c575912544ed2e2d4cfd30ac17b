@@ -1,0 +1,19 @@
+.github/workflows/agentloop-vs-macbox-1126.yml
+  s_2c8243b4e6462a::t_d2f48cccb75008 33,62,73,85,93,96,103,107,115,118,132,137,144,147,159
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "98855e9d24f65c575912544ed2e2d4cfd30ac17b",
+  "prompts": {},
+  "sessions": {
+    "s_2c8243b4e6462a": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "f6249877-b9f0-4215-ac56-ba0f835b9ef0",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "001005HS <99410048+001005HS@users.noreply.github.com>"
+    }
+  }
+}
