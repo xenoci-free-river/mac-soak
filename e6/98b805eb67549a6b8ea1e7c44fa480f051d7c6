@@ -1,0 +1,19 @@
+.github/workflows/sim-diag-1126.yml
+  s_2c8243b4e6462a::t_8f86ad5b91d77d 1-45
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "e698b805eb67549a6b8ea1e7c44fa480f051d7c6",
+  "prompts": {},
+  "sessions": {
+    "s_2c8243b4e6462a": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "f6249877-b9f0-4215-ac56-ba0f835b9ef0",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "001005HS <99410048+001005HS@users.noreply.github.com>"
+    }
+  }
+}
