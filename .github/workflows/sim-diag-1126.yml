@@ -15,14 +15,14 @@ jobs:
     timeout-minutes: 20
     steps:
       - name: memory before
-        shell: bash
+        shell: /bin/bash --noprofile --norc {0}
         run: |
           sysctl -n hw.memsize hw.ncpu; sw_vers -productVersion; vm_stat | head -6; sysctl vm.swapusage
-          ps -axo rss,comm | sort -rn | head -8
+          ps -axo rss,comm | sort -rn | head -8 || true
       - name: boot simulator, memory every 5s
         timeout-minutes: 10
         continue-on-error: true
-        shell: bash
+        shell: /bin/bash --noprofile --norc {0}
         run: |
           export DEVELOPER_DIR=/Applications/Xcode_27.0.app/Contents/Developer
           UDID=$(xcrun simctl list devices available -j | python3 -c 'import json,sys
@@ -36,10 +36,16 @@ jobs:
           xcrun simctl boot "$UDID"; echo "boot cmd returned $(( $(date +%s) - s ))s"
           xcrun simctl bootstatus "$UDID" -b; echo "T sim_boot $(( $(date +%s) - s ))"
           sleep 20
-          ps -axo rss,comm | sort -rn | head -10
+          ps -axo rss,comm | sort -rn | head -10 || true
           s=$(date +%s); xcrun simctl io "$UDID" screenshot /tmp/s.png; echo "T screenshot $(( $(date +%s) - s ))"
+          echo "now the unit test that lost the runner"
+          cd "$GITHUB_WORKSPACE" && git clone -q --depth 1 https://github.com/xenoci-free-river/mac-soak.git ms && cd ms/agentloop/Counter
+          curl -fsSL -o /tmp/xg.zip https://github.com/yonaskolb/XcodeGen/releases/download/2.44.1/xcodegen.artifactbundle.zip && unzip -q -o /tmp/xg.zip -d /tmp/xg
+          $(find /tmp/xg -type f -name xcodegen -perm -u+x | head -1) generate --quiet
+          s=$(date +%s); xcodebuild test -scheme Counter -destination "id=$UDID" -derivedDataPath /tmp/dd -only-testing:CounterTests CODE_SIGN_IDENTITY=- > /tmp/t.log 2>&1; echo "T unit_test $(( $(date +%s) - s )) exit=$?"
+          grep -E "Executed|error:" /tmp/t.log | tail -3
           xcrun simctl shutdown "$UDID"; echo done
       - name: memory after
         if: always()
-        shell: bash
+        shell: /bin/bash --noprofile --norc {0}
         run: vm_stat | head -6; sysctl vm.swapusage
