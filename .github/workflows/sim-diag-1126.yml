@@ -1,0 +1,45 @@
+name: sim-diag-1126
+run-name: simdiag-${{ inputs.probe }}
+# 2026-11-26: simulator tests lose the runner on our Mac guests; boot a simulator alone and print memory every 5 seconds
+# (to the log as it happens) so the last lines before a loss show what ran out. Dispatch only.
+on:
+  workflow_dispatch:
+    inputs:
+      probe:
+        required: true
+env:
+  DEVELOPER_DIR: /Applications/Xcode_26.5.app/Contents/Developer
+jobs:
+  diag:
+    runs-on: xenoci-macos
+    timeout-minutes: 20
+    steps:
+      - name: memory before
+        shell: bash
+        run: |
+          sysctl -n hw.memsize hw.ncpu; sw_vers -productVersion; vm_stat | head -6; sysctl vm.swapusage
+          ps -axo rss,comm | sort -rn | head -8
+      - name: boot simulator, memory every 5s
+        timeout-minutes: 10
+        continue-on-error: true
+        shell: bash
+        run: |
+          export DEVELOPER_DIR=/Applications/Xcode_27.0.app/Contents/Developer
+          UDID=$(xcrun simctl list devices available -j | python3 -c 'import json,sys
+          d=json.load(sys.stdin)["devices"]
+          c=[(k,x) for k,v in d.items() if "iOS" in k for x in v if x["name"].startswith("iPhone")]
+          c.sort(key=lambda p:[int(n) for n in p[0].split("iOS-")[-1].split("-")])
+          print(c[-1][1]["udid"])')
+          echo "sim $UDID"
+          ( while :; do echo "MEM $(date +%T) free=$(vm_stat | awk '/Pages free/{print $3}') swap=$(sysctl -n vm.swapusage | awk '{print $6}') load=$(sysctl -n vm.loadavg | awk '{print $2}')"; sleep 5; done ) &
+          s=$(date +%s)
+          xcrun simctl boot "$UDID"; echo "boot cmd returned $(( $(date +%s) - s ))s"
+          xcrun simctl bootstatus "$UDID" -b; echo "T sim_boot $(( $(date +%s) - s ))"
+          sleep 20
+          ps -axo rss,comm | sort -rn | head -10
+          s=$(date +%s); xcrun simctl io "$UDID" screenshot /tmp/s.png; echo "T screenshot $(( $(date +%s) - s ))"
+          xcrun simctl shutdown "$UDID"; echo done
+      - name: memory after
+        if: always()
+        shell: bash
+        run: vm_stat | head -6; sysctl vm.swapusage
