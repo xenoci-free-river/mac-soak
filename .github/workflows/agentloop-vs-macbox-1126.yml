@@ -15,6 +15,10 @@ on:
         default: cold
       probe:
         required: true
+      xcode:
+        description: Xcode app version (27.0 = iOS 27.0 simulator, 26.6 = iOS 26.x)
+        required: false
+        default: '27.0'
 permissions:
   contents: read
 concurrency:
@@ -38,7 +42,7 @@ jobs:
           sw_vers -productVersion; df -h / | tail -1
           ls -d /Applications/Xcode*.app
           # Xcode 27.0 with the iOS 27.0 simulator, the same pair macbox ran
-          XC=/Applications/Xcode_27.0.app
+          XC=/Applications/Xcode_${{ inputs.xcode }}.app
           echo "DEVELOPER_DIR=$XC/Contents/Developer" >> "$GITHUB_ENV"
           DEVELOPER_DIR="$XC/Contents/Developer" xcodebuild -version
           mkdir -p "$W"
@@ -83,6 +87,7 @@ jobs:
           c.sort(key=lambda p:[int(n) for n in p[0].split("iOS-")[-1].split("-")])
           print(c[-1][1]["udid"])')
           xcrun simctl list devices | grep "$UDID"
+          vm_stat | head -4; sysctl -n hw.memsize hw.ncpu
           echo "SIM=$UDID" >> "$GITHUB_ENV"
       - name: counter build
         timeout-minutes: 8
